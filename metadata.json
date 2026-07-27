@@ -1,0 +1,6 @@
+{
+  "name": "Conecta Pro",
+  "description": "Plataforma Marketplace de Serviços conectando clientes gratuitos a profissionais cadastrados com assinaturas e painel administrativo.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
