@@ -116,6 +116,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           <p className="text-slate-300 text-sm max-w-xl">
             Acompanhe pagamentos das taxas dos profissionais, aprove ou bloqueie perfis, gerencie categorias e preste atendimento aos tickets de suporte.
           </p>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-purple-900/80 border border-purple-400/40 text-purple-200 text-xs font-bold mt-2 shadow-md">
+            <span>👑 Administrador Master Logado:</span>
+            <span className="text-white font-black underline">murilo.leonardo57@gmail.com</span>
+          </div>
         </div>
         <div className="flex flex-wrap gap-3">
           <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 text-center">

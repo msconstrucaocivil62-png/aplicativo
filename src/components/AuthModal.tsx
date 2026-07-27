@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, ServiceCategory, UserRole } from '../types';
-import { X, UserCheck, Briefcase, ShieldAlert, PlusCircle, ArrowRight, Sparkles, Check, Phone } from 'lucide-react';
+import { X, UserCheck, Briefcase, ShieldAlert, PlusCircle, ArrowRight, Sparkles, Check, Phone, Eye, EyeOff, KeyRound, Mail, Lock, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -9,6 +9,7 @@ interface AuthModalProps {
   currentUser: User;
   categories: ServiceCategory[];
   onSwitchUser: (userId: string) => Promise<void>;
+  onLoginUser?: (email: string, password?: string) => Promise<void>;
   onRegisterUser: (data: any) => Promise<void>;
   onEnterAdminApp?: () => void;
 }
@@ -20,19 +21,38 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   currentUser,
   categories,
   onSwitchUser,
+  onLoginUser,
   onRegisterUser,
   onEnterAdminApp
 }) => {
-  const [tab, setTab] = useState<'switch' | 'register'>('switch');
+  const [tab, setTab] = useState<'login' | 'switch' | 'register' | 'recover'>('login');
+
+  // Login form state
+  const [loginEmail, setLoginEmail] = useState('murilo.leonardo57@gmail.com');
+  const [loginPassword, setLoginPassword] = useState('Murilo2@@8');
+  const [loginError, setLoginError] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   // Register form state
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('123456');
+  const [showRegPassword, setShowRegPassword] = useState(false);
   const [regRole, setRegRole] = useState<UserRole>('pro');
   const [regPhone, setRegPhone] = useState('(11) 98888-7777');
   const [regCats, setRegCats] = useState<string[]>(['Eletricista']);
   const [regBio, setRegBio] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Recover password state
+  const [recoverEmail, setRecoverEmail] = useState('');
+  const [recoverStep, setRecoverStep] = useState<1 | 2>(1);
+  const [recoverCode, setRecoverCode] = useState('');
+  const [inputCode, setInputCode] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [recoverMsg, setRecoverMsg] = useState('');
+  const [recoverError, setRecoverError] = useState('');
 
   if (!isOpen) return null;
 
@@ -41,6 +61,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     await onSwitchUser(id);
     setLoading(false);
     onClose();
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginEmail || !onLoginUser) return;
+    setLoading(true);
+    setLoginError('');
+    try {
+      await onLoginUser(loginEmail, loginPassword);
+      onClose();
+    } catch (err: any) {
+      setLoginError(err.message || 'Erro ao realizar login.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -95,10 +130,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             Alterne entre contas existentes ou cadastre um novo perfil para testar as regras de cobrança, bloqueio de plano expirado e painel admin.
           </p>
 
-          <div className="flex gap-4 mt-6 border-b border-slate-800">
+          <div className="flex flex-wrap gap-4 mt-6 border-b border-slate-800">
+            <button
+              onClick={() => setTab('login')}
+              className={`pb-3 font-bold text-sm transition-all border-b-2 cursor-pointer ${
+                tab === 'login' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-white'
+              }`}
+            >
+              🔐 Login no Sistema
+            </button>
             <button
               onClick={() => setTab('switch')}
-              className={`pb-3 font-bold text-sm transition-all border-b-2 ${
+              className={`pb-3 font-bold text-sm transition-all border-b-2 cursor-pointer ${
                 tab === 'switch' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-white'
               }`}
             >
@@ -106,17 +149,141 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </button>
             <button
               onClick={() => setTab('register')}
-              className={`pb-3 font-bold text-sm transition-all border-b-2 ${
+              className={`pb-3 font-bold text-sm transition-all border-b-2 cursor-pointer ${
                 tab === 'register' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-white'
               }`}
             >
               ✨ Cadastrar Novo Perfil
             </button>
+            <button
+              onClick={() => { setTab('recover'); setRecoverStep(1); setRecoverError(''); setRecoverMsg(''); }}
+              className={`pb-3 font-bold text-sm transition-all border-b-2 cursor-pointer flex items-center gap-1 ${
+                tab === 'recover' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-white'
+              }`}
+            >
+              <KeyRound className="w-4 h-4" />
+              <span>Esqueci a Senha</span>
+            </button>
           </div>
         </div>
 
         <div className="p-6 sm:p-8">
-          {tab === 'switch' ? (
+          {tab === 'login' ? (
+            <div className="space-y-6">
+              {/* Admin credentials highlight box */}
+              <div className="p-5 rounded-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 text-white space-y-3 shadow-lg border border-purple-500/40">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-black text-sm text-amber-400">
+                    <ShieldAlert className="w-5 h-5 text-amber-400 animate-pulse" />
+                    <span>Acesso Oficial - Administrador Geral Conecta Pro 👑</span>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full bg-purple-500/30 text-purple-200 border border-purple-400/30 font-extrabold text-[11px] uppercase">
+                    Reconhecido no Sistema
+                  </span>
+                </div>
+                <p className="text-xs text-slate-200 font-medium leading-relaxed">
+                  As suas credenciais oficiais já estão configuradas como Administrador Master da plataforma com acesso total:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-900/80 p-3.5 rounded-xl border border-purple-500/30 shadow-inner font-mono">
+                  <div>
+                    <span className="text-purple-300 block font-sans font-bold text-[10px]">E-mail de Cadastro:</span>
+                    <strong className="text-white">murilo.leonardo57@gmail.com</strong>
+                  </div>
+                  <div>
+                    <span className="text-purple-300 block font-sans font-bold text-[10px]">Senha do Administrador:</span>
+                    <strong className="text-amber-400">Murilo2@@8</strong>
+                  </div>
+                </div>
+                {onEnterAdminApp && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onEnterAdminApp();
+                    }}
+                    className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer mt-1"
+                  >
+                    <span>Entrar Direto no Portal Administrador agora 👑</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Login Form */}
+              <form onSubmit={handleLogin} className="space-y-4 pt-2 border-t border-slate-100">
+                <span className="text-xs font-bold text-slate-600 uppercase tracking-wider block">
+                  Ou confirme seu e-mail e senha abaixo para entrar no sistema:
+                </span>
+
+                {loginError && (
+                  <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-bold flex items-center gap-2">
+                    <span>⚠️</span> {loginError}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">E-mail de Acesso *</label>
+                    <input
+                      type="email"
+                      required
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      placeholder="seu@email.com"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block text-xs font-bold text-slate-700">Senha *</label>
+                      <button
+                        type="button"
+                        onClick={() => { setTab('recover'); setRecoverStep(1); setRecoverError(''); setRecoverMsg(''); }}
+                        className="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer"
+                      >
+                        Esqueceu a senha?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showLoginPassword ? 'text' : 'password'}
+                        required
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm font-semibold"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        title={showLoginPassword ? "Ocultar senha" : "Ver senha / conferir digitação"}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                      >
+                        {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-5 py-2.5 rounded-xl border border-slate-300 font-bold text-xs text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-md transition-all disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                  >
+                    {loading ? 'Validando...' : 'Acessar Plataforma 🚀'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : tab === 'switch' ? (
             <div className="space-y-4">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
                 Clique no perfil para testar a plataforma na visão dele:
@@ -196,7 +363,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         <span>Aplicativo Exclusivo de Gestão</span>
                       </div>
                       <h4 className="font-extrabold text-white text-base">Console do Administrador Geral 👑</h4>
-                      <p className="text-xs text-slate-300">Acesso isolado para gestão de taxas, ordens, tickets e credenciais de pagamento.</p>
+                      <p className="text-xs text-slate-300">Acesso exclusivo para <strong className="text-amber-400">murilo.leonardo57@gmail.com</strong> com gestão de taxas, ordens, tickets e credenciais de pagamento.</p>
                     </div>
                     <button
                       type="button"
@@ -211,6 +378,126 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </button>
                   </div>
                 </div>
+              )}
+            </div>
+          ) : tab === 'recover' ? (
+            /* RECOVER PASSWORD FORM */
+            <div className="space-y-6">
+              <div className="bg-blue-50 p-4 rounded-2xl border border-blue-200 text-blue-900 space-y-1">
+                <h4 className="font-extrabold text-sm flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-blue-600" />
+                  <span>Recuperação Segura de Acesso</span>
+                </h4>
+                <p className="text-xs text-blue-800">
+                  Esqueceu sua senha? Digite o e-mail cadastrado na plataforma para gerar um código de verificação e definir uma nova senha.
+                </p>
+              </div>
+
+              {recoverError && (
+                <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-bold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{recoverError}</span>
+                </div>
+              )}
+
+              {recoverMsg && (
+                <div className="p-4 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl text-xs font-bold flex items-start gap-2.5">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="block font-black text-sm text-emerald-900">{recoverMsg}</span>
+                    {recoverStep === 2 && (
+                      <span className="block mt-1 font-normal text-emerald-700">
+                        Copie o código exibido e defina a sua nova senha no formulário abaixo. Use o ícone de olho para conferir antes de salvar!
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {recoverStep === 1 ? (
+                <form onSubmit={handleRecoverRequest} className="space-y-4">
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1">E-mail Cadastrado na Plataforma *</label>
+                    <input
+                      type="email"
+                      required
+                      value={recoverEmail}
+                      onChange={(e) => setRecoverEmail(e.target.value)}
+                      placeholder="Ex: seu@email.com"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 text-sm font-semibold outline-none"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setTab('login')}
+                      className="px-5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 text-xs font-bold cursor-pointer"
+                    >
+                      Voltar ao Login
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-md transition-all cursor-pointer flex items-center gap-2"
+                    >
+                      {loading ? 'Buscando...' : 'Gerar Código de Recuperação 🔑'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">Código de Verificação Gerado *</label>
+                      <input
+                        type="text"
+                        required
+                        value={inputCode}
+                        onChange={(e) => setInputCode(e.target.value)}
+                        placeholder="Ex: 123456"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono font-bold text-center tracking-widest text-base focus:ring-2 focus:ring-blue-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">Nova Senha de Acesso *</label>
+                      <div className="relative">
+                        <input
+                          type={showResetPassword ? 'text' : 'password'}
+                          required
+                          value={resetNewPassword}
+                          onChange={(e) => setResetNewPassword(e.target.value)}
+                          placeholder="Digite a nova senha"
+                          className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 font-semibold text-sm focus:ring-2 focus:ring-blue-600"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowResetPassword(!showResetPassword)}
+                          title={showResetPassword ? "Ocultar senha" : "Ver senha para conferir"}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                        >
+                          {showResetPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      <span className="text-[10px] text-slate-500 block mt-1">Clique no olho 👁️ para conferir a senha digitada.</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => { setRecoverStep(1); setRecoverMsg(''); setRecoverError(''); }}
+                      className="px-5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 text-xs font-bold cursor-pointer"
+                    >
+                      Voltar / Alterar E-mail
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md transition-all cursor-pointer flex items-center gap-2"
+                    >
+                      {loading ? 'Salvando...' : 'Salvar Nova Senha e Acessar 🚀'}
+                    </button>
+                  </div>
+                </form>
               )}
             </div>
           ) : (
@@ -242,7 +529,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Senha de Acesso *</label>
+                  <div className="relative">
+                    <input
+                      type={showRegPassword ? 'text' : 'password'}
+                      required
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      placeholder="Sua senha"
+                      className="w-full pl-3.5 pr-9 py-2.5 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white text-sm font-semibold outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegPassword(!showRegPassword)}
+                      title={showRegPassword ? "Ocultar senha" : "Ver senha para conferir"}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                    >
+                      {showRegPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                  <span className="text-[10px] text-slate-500 block mt-0.5">Clique no olho para conferir.</span>
+                </div>
+
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Tipo de Conta *</label>
                   <select
@@ -250,9 +560,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     onChange={(e: any) => setRegRole(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-sm font-extrabold outline-none"
                   >
-                    <option value="pro">🛠️ Profissional Prestador (Taxa / Assinatura)</option>
-                    <option value="client">👤 Cliente (Solicitação 100% Gratuita)</option>
-                    <option value="admin">👑 Administrador Geral (Gestão & Finanças da Plataforma)</option>
+                    <option value="pro">🛠️ Profissional Prestador</option>
+                    <option value="client">👤 Cliente Gratuito</option>
+                    <option value="admin">👑 Administrador</option>
                   </select>
                 </div>
 
@@ -300,14 +610,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 text-sm font-bold"
+                  className="px-5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 text-sm font-bold cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-sm shadow-lg shadow-blue-500/25 hover:brightness-110 flex items-center gap-2"
+                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-sm shadow-lg shadow-blue-500/25 hover:brightness-110 flex items-center gap-2 cursor-pointer"
                 >
                   {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <span>Cadastrar e Acessar Agora</span>}
                 </button>

@@ -1,10 +1,11 @@
 import React from 'react';
 import { User, UserRole } from '../types';
-import { Zap, ShieldAlert, CheckCircle, RefreshCw, UserCheck, HelpCircle, LogOut, ArrowRightLeft, Sparkles, Building2 } from 'lucide-react';
+import { Zap, ShieldAlert, CheckCircle, RefreshCw, UserCheck, HelpCircle, LogOut, ArrowRightLeft, Sparkles, Building2, UserCog } from 'lucide-react';
 
 interface NavbarProps {
   currentUser: User;
   onOpenAuthModal: () => void;
+  onOpenEditProfileModal: () => void;
   onOpenSupportModal: () => void;
   onOpenSubscribeModal: () => void;
   onResetDemo: () => void;
@@ -14,6 +15,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onOpenAuthModal,
+  onOpenEditProfileModal,
   onOpenSupportModal,
   onOpenSubscribeModal,
   onResetDemo,
@@ -111,6 +113,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             <ArrowRightLeft className="w-4 h-4 text-blue-400 group-hover:rotate-180 transition-transform duration-300" />
             <span className="hidden sm:inline">Modo Demo / Perfil:</span>
             <span className="font-bold text-white underline decoration-blue-400">{currentUser.name.split(' ')[0]}</span>
+          </button>
+
+          {/* Edit Profile Button */}
+          <button
+            onClick={onOpenEditProfileModal}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/30 hover:bg-blue-600 text-blue-200 hover:text-white border border-blue-500/40 text-xs font-bold transition-all shadow-sm cursor-pointer"
+            title="Editar dados do Meu Perfil, Contato e Senha de Acesso"
+          >
+            <UserCog className="w-4 h-4 text-blue-300" />
+            <span className="hidden md:inline">Editar Perfil</span>
           </button>
 
           {/* Support Ticket button */}

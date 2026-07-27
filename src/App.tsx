@@ -7,6 +7,7 @@ import { AdminPortal } from './components/AdminPortal';
 import { AuthModal } from './components/AuthModal';
 import { SupportModal } from './components/SupportModal';
 import { SubscriptionModal } from './components/SubscriptionModal';
+import { EditProfileModal } from './components/EditProfileModal';
 import { ArrowRightLeft, Sparkles, ShieldAlert, CheckCircle, Zap } from 'lucide-react';
 
 export default function App() {
@@ -24,6 +25,7 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState(false);
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
 
   // Exclusive Admin App Mode state
   const [isAdminAppMode, setIsAdminAppMode] = useState<boolean>(() => {
@@ -90,6 +92,23 @@ export default function App() {
     }
   };
 
+  const handleLoginUser = async (email: string, password?: string) => {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    if (data.success) {
+      if (data.user.role === 'admin') {
+        await toggleAdminAppMode(true, data.user.id);
+      } else {
+        await fetchState(data.user.id);
+      }
+    }
+  };
+
   const handleRegisterUser = async (regData: any) => {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
@@ -104,6 +123,19 @@ export default function App() {
       } else {
         await fetchState(data.user.id);
       }
+    }
+  };
+
+  const handleUpdateProfile = async (updatedData: any) => {
+    const res = await fetch('/api/users/update-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedData)
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    if (data.success && data.user) {
+      await fetchState(data.user.id);
     }
   };
 
@@ -319,6 +351,14 @@ export default function App() {
               </span>
               <button
                 type="button"
+                onClick={() => setIsEditProfileModalOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-purple-600/40 hover:bg-purple-600 text-purple-200 hover:text-white font-extrabold text-xs shadow border border-purple-500/40 transition-all flex items-center gap-1.5 cursor-pointer"
+                title="Editar Perfil e Senha do Admin"
+              >
+                <span>✏️ Editar Perfil Admin</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => toggleAdminAppMode(false)}
                 className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs shadow-md border border-slate-700 transition-all flex items-center gap-2 cursor-pointer"
               >
@@ -332,6 +372,7 @@ export default function App() {
         <Navbar
           currentUser={currentUser}
           onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onOpenEditProfileModal={() => setIsEditProfileModalOpen(true)}
           onOpenSupportModal={() => setIsSupportModalOpen(true)}
           onOpenSubscribeModal={() => setIsSubscribeModalOpen(true)}
           onResetDemo={handleResetDemo}
@@ -379,6 +420,7 @@ export default function App() {
                 onOpenSupportModal={() => setIsSupportModalOpen(true)}
                 onUpdateCategories={handleUpdateProCategories}
                 onRateClient={handleRateClient}
+                onOpenEditProfileModal={() => setIsEditProfileModalOpen(true)}
               />
             )}
 
@@ -473,6 +515,7 @@ export default function App() {
         currentUser={currentUser}
         categories={categories}
         onSwitchUser={handleSwitchUser}
+        onLoginUser={handleLoginUser}
         onRegisterUser={handleRegisterUser}
         onEnterAdminApp={() => toggleAdminAppMode(true)}
       />
@@ -493,6 +536,14 @@ export default function App() {
         config={config}
         onSelectPlanAndPay={handleSelectPlanAndPay}
         onSimulateWebhookApproval={handleSimulateWebhookApproval}
+      />
+
+      <EditProfileModal
+        isOpen={isEditProfileModalOpen}
+        onClose={() => setIsEditProfileModalOpen(false)}
+        currentUser={currentUser}
+        categories={categories}
+        onUpdateProfile={handleUpdateProfile}
       />
 
     </div>

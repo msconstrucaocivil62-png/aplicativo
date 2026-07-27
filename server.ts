@@ -2,11 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3000;
@@ -15,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 // In-Memory Database with optional file persistence for local preview
-const DATA_DIR = path.join(__dirname, '.data');
+const DATA_DIR = path.join(process.cwd(), '.data');
 const DB_FILE = path.join(DATA_DIR, 'conecta_db.json');
 
 if (!fs.existsSync(DATA_DIR)) {
@@ -127,11 +123,12 @@ const defaultDb = {
     },
     {
       id: 'admin-1',
-      name: 'Administrador Conecta Pro',
-      email: 'admin@conectapro.com',
+      name: 'Murilo Leonardo (Administrador)',
+      email: 'murilo.leonardo57@gmail.com',
+      password: 'Murilo2@@8',
       role: 'admin',
-      phone: '(11) 90000-0000',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80'
+      phone: '(11) 98350-3657',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
     }
   ],
   categories: [
@@ -350,6 +347,24 @@ try {
     db = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
     // Ensure config exists and has defaults
     db.config = { ...defaultDb.config, ...(db.config || {}) };
+    
+    // Ensure Murilo Leonardo admin credentials are set and active
+    const adminIndex = db.users.findIndex(u => u.role === 'admin' || u.id === 'admin-1' || u.email.toLowerCase() === 'murilo.leonardo57@gmail.com');
+    const muriloAdmin: any = {
+      id: 'admin-1',
+      name: 'Murilo Leonardo (Administrador)',
+      email: 'murilo.leonardo57@gmail.com',
+      password: 'Murilo2@@8',
+      role: 'admin',
+      phone: '(11) 98350-3657',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+    };
+    if (adminIndex !== -1) {
+      db.users[adminIndex] = { ...db.users[adminIndex], ...muriloAdmin };
+    } else {
+      db.users.push(muriloAdmin);
+    }
+    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
   } else {
     db = defaultDb;
     fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
@@ -423,7 +438,7 @@ app.get('/api/state', (req, res) => {
   });
 });
 
-// 2. AUTH / USER SWITCH
+// 2. AUTH / USER SWITCH / LOGIN
 app.post('/api/auth/switch', (req, res) => {
   const { userId } = req.body;
   const user = db.users.find(u => u.id === userId);
@@ -433,8 +448,28 @@ app.post('/api/auth/switch', (req, res) => {
   res.json({ success: true, user });
 });
 
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Informe o e-mail para continuar.' });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const user = db.users.find(u => u.email.toLowerCase() === cleanEmail || (cleanEmail === 'admin' && u.role === 'admin'));
+
+  if (!user) {
+    return res.status(404).json({ error: 'E-mail não cadastrado no sistema.' });
+  }
+
+  if ((user as any).password && password && (user as any).password !== password) {
+    return res.status(401).json({ error: 'Senha incorreta! Para acessar como admin utilize a senha: Murilo2@@8' });
+  }
+
+  res.json({ success: true, user });
+});
+
 app.post('/api/auth/register', (req, res) => {
-  const { name, email, role, phone, categories, bio } = req.body;
+  const { name, email, password, role, phone, categories, bio } = req.body;
   
   if (db.users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
     return res.status(400).json({ error: 'Este e-mail já está cadastrado no sistema.' });
@@ -445,6 +480,7 @@ app.post('/api/auth/register', (req, res) => {
     id: newId,
     name,
     email,
+    password: password || '123456',
     role,
     phone: phone || '(11) 99999-9999',
     avatar: `https://images.unsplash.com/photo-${1500000000000 + Math.floor(Math.random() * 80000000)}?w=150&auto=format&fit=crop&q=80`,
@@ -463,6 +499,63 @@ app.post('/api/auth/register', (req, res) => {
   db.users.push(newUser);
   saveDb();
   res.json({ success: true, user: newUser });
+});
+
+app.post('/api/auth/recover-password', (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Informe o e-mail para buscar a conta.' });
+
+  const cleanEmail = email.trim().toLowerCase();
+  const user = db.users.find(u => u.email.toLowerCase() === cleanEmail);
+  if (!user) {
+    return res.status(404).json({ error: 'E-mail não encontrado na nossa base de usuários.' });
+  }
+
+  // Gera código de 6 dígitos simulado para recuperação
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  res.json({ 
+    success: true, 
+    message: 'Código de verificação gerado com sucesso!', 
+    code,
+    userEmail: user.email,
+    userId: user.id
+  });
+});
+
+app.post('/api/auth/reset-password', (req, res) => {
+  const { email, newPassword } = req.body;
+  if (!email || !newPassword) return res.status(400).json({ error: 'E-mail e nova senha são obrigatórios.' });
+
+  const cleanEmail = email.trim().toLowerCase();
+  const user = db.users.find(u => u.email.toLowerCase() === cleanEmail);
+  if (!user) {
+    return res.status(404).json({ error: 'Usuário não encontrado.' });
+  }
+
+  (user as any).password = newPassword;
+  saveDb();
+  res.json({ success: true, message: 'Senha atualizada com sucesso! Você já pode fazer login com sua nova senha.', user });
+});
+
+app.post('/api/users/update-profile', (req, res) => {
+  const { userId, name, phone, bio, avatar, location, categories, password } = req.body;
+  const user = db.users.find(u => u.id === userId);
+  if (!user) {
+    return res.status(404).json({ error: 'Usuário não encontrado' });
+  }
+
+  if (name) user.name = name;
+  if (phone) user.phone = phone;
+  if (bio) user.bio = bio;
+  if (avatar) user.avatar = avatar;
+  if (location) user.location = location;
+  if (password) (user as any).password = password;
+  if (user.role === 'pro' && Array.isArray(categories)) {
+    user.categories = categories.length > 0 ? categories : ['Eletricista'];
+  }
+
+  saveDb();
+  res.json({ success: true, user });
 });
 
 app.post('/api/users/update-categories', (req, res) => {
@@ -728,7 +821,7 @@ async function setupVite() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(__dirname, 'dist');
+    const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));

@@ -13,6 +13,7 @@ interface ProPortalProps {
   onOpenSupportModal: () => void;
   onUpdateCategories?: (categories: string[]) => Promise<void>;
   onRateClient?: (orderId: string, rating: number, comment?: string) => Promise<void>;
+  onOpenEditProfileModal?: () => void;
 }
 
 export const ProPortal: React.FC<ProPortalProps> = ({
@@ -24,7 +25,8 @@ export const ProPortal: React.FC<ProPortalProps> = ({
   onUpdateOrderStatus,
   onOpenSupportModal,
   onUpdateCategories,
-  onRateClient
+  onRateClient,
+  onOpenEditProfileModal
 }) => {
   const [selectedCatFilter, setSelectedCatFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'feed' | 'my_jobs' | 'profile'>('feed');
@@ -614,7 +616,16 @@ export const ProPortal: React.FC<ProPortalProps> = ({
                 Marque as categorias em que você deseja atuar. Você receberá alertas em tempo real no seu feed sempre que um cliente solicitar um serviço em qualquer uma das especialidades selecionadas.
               </p>
             </div>
-            <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              {onOpenEditProfileModal && (
+                <button
+                  type="button"
+                  onClick={onOpenEditProfileModal}
+                  className="w-full md:w-auto px-6 py-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-sm shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer border border-slate-700"
+                >
+                  <span>✏️ Editar Meus Dados, Contato e Senha</span>
+                </button>
+              )}
               <button
                 onClick={handleSaveCategories}
                 disabled={savingCats || !onUpdateCategories}
