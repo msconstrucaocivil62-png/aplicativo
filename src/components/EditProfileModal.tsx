@@ -22,7 +22,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [bio, setBio] = useState(currentUser?.bio || '');
   const [avatar, setAvatar] = useState(currentUser?.avatar || '');
   const [location, setLocation] = useState(currentUser?.location || 'São Paulo, SP');
-  const [password, setPassword] = useState((currentUser as any)?.password || 'Murilo2@@8');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [selectedCats, setSelectedCats] = useState<string[]>(currentUser?.categories || ['Eletricista']);
   

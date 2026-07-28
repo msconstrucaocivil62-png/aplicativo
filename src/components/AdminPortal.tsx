@@ -39,7 +39,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const [replyText, setReplyText] = useState('');
 
   // Config state
-  const [mpToken, setMpToken] = useState(config.mercadoPagoAccessToken);
   const [pixKey, setPixKey] = useState(config.pixReceiverKey);
   const [pixName, setPixName] = useState(config.pixReceiverName || 'Conecta Pro Serviços de Tecnologia Ltda');
   const [pixBank, setPixBank] = useState(config.pixReceiverBank || 'Mercado Pago / Banco do Brasil');
@@ -89,7 +88,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     await onSaveConfig({
-      mercadoPagoAccessToken: mpToken,
       pixReceiverKey: pixKey,
       pixReceiverName: pixName,
       pixReceiverBank: pixBank,
@@ -684,7 +682,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               </div>
               <div>
                 <h3 className="font-black text-slate-900 text-xl">💳 Dados da Conta & Recebimento de Taxas</h3>
-                <span className="text-xs text-slate-500 font-medium">Configure onde cairão as taxas de assinatura R$ 50, R$ 200 e R$ 450 dos profissionais</span>
+                <span className="text-xs text-slate-500 font-medium">Configure os dados públicos de recebimento dos planos de R$ 50, R$ 200 e R$ 350</span>
               </div>
             </div>
 
@@ -765,20 +763,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 />
               </div>
 
-              <div className="pt-3 border-t border-slate-100">
-                <label className="text-xs font-black text-slate-700 block mb-1.5 uppercase tracking-wider">
-                  MERCADO_PAGO_ACCESS_TOKEN (Automação de Pagamento)
-                </label>
-                <input
-                  type="password"
-                  value={mpToken}
-                  onChange={(e) => setMpToken(e.target.value)}
-                  placeholder="APP_USR-7829103984102938..."
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 text-xs font-mono outline-none transition-all"
-                />
-                <span className="text-[11px] text-slate-400 block mt-1.5 font-medium">
-                  Chave do Mercado Pago Developers para geração de QR Code dinâmico e recebimento de webhooks instantâneos.
-                </span>
+              <div className="pt-3 border-t border-slate-100 p-4 rounded-2xl bg-emerald-50 text-emerald-900 text-xs font-semibold">
+                As credenciais do Mercado Pago são protegidas no servidor. Configure os secrets
+                <code className="mx-1 font-black">MERCADO_PAGO_ACCESS_TOKEN</code> e
+                <code className="mx-1 font-black">MERCADO_PAGO_WEBHOOK_SECRET</code> no ambiente de hospedagem.
+                Por segurança, elas nunca são exibidas ou salvas neste painel.
               </div>
 
               <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 text-blue-950 text-xs font-semibold leading-relaxed shadow-xs flex items-center gap-3">

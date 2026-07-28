@@ -29,7 +29,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('murilo.leonardo57@gmail.com');
-  const [loginPassword, setLoginPassword] = useState('Murilo2@@8');
+  const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
 
@@ -94,6 +94,42 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       onClose();
     } catch (err: any) {
       alert(err.message || 'Erro ao cadastrar');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRecoverRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setRecoverError('');
+    try {
+      const response = await fetch('/api/auth/recover-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: recoverEmail }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Não foi possível iniciar a recuperação.');
+      setRecoverCode(data.code);
+      setRecoverStep(2);
+      setRecoverMsg(data.message || 'Código gerado.');
+    } catch (error: any) {
+      setRecoverError(error.message || 'Erro ao recuperar a senha.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRecoverError('');
+    if (!recoverCode || inputCode !== recoverCode) return setRecoverError('Código de verificação inválido.');
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: recoverEmail, newPassword: resetNewPassword }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Não foi possível alterar a senha.');
+      setRecoverMsg(data.message || 'Senha atualizada.');
+      setTab('login');
+    } catch (error: any) {
+      setRecoverError(error.message || 'Erro ao alterar a senha.');
     } finally {
       setLoading(false);
     }
@@ -191,7 +227,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </div>
                   <div>
                     <span className="text-purple-300 block font-sans font-bold text-[10px]">Senha do Administrador:</span>
-                    <strong className="text-amber-400">Murilo2@@8</strong>
+                    <strong className="text-amber-400">sua senha administrativa</strong>
                   </div>
                 </div>
                 {onEnterAdminApp && (
@@ -601,7 +637,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     })}
                   </div>
                   <span className="text-[11px] text-amber-700 font-medium block">
-                    ⚠️ Importante: Novos profissionais começam com o status de plano <strong>Expirado/Bloqueado</strong> até realizarem a primeira renovação (Mensal R$ 50, Semestral R$ 200 ou Anual R$ 450).
+                    ⚠️ Importante: Novos profissionais começam com o status de plano <strong>Expirado/Bloqueado</strong> até realizarem a primeira renovação (Mensal R$ 50, Semestral R$ 200 ou Anual R$ 350).
                   </span>
                 </div>
               )}
