@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { createServer as createViteServer } from 'vite';
 
 const app = express();
@@ -125,7 +126,7 @@ const defaultDb = {
       id: 'admin-1',
       name: 'Murilo Leonardo (Administrador)',
       email: 'murilo.leonardo57@gmail.com',
-      password: 'Murilo2@@8',
+      password: process.env.ADMIN_PASSWORD || '',
       role: 'admin',
       phone: '(11) 98350-3657',
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
@@ -330,14 +331,14 @@ const defaultDb = {
     }
   ],
   config: {
-    mercadoPagoAccessToken: 'APP_USR-7829103984102938-072711-2a9f8b7c6d5e4f3a2b1c-102938475',
+    mercadoPagoAccessToken: '',
     pixReceiverKey: 'financeiro@conectapro.com.br',
     pixReceiverName: 'Conecta Pro Serviços de Tecnologia Ltda',
     pixReceiverBank: 'Mercado Pago / Banco do Brasil',
     pixReceiverCnpjCpf: '45.123.456/0001-89',
     pixInstructions: 'Após o pagamento Pix ou transferência, o sistema realiza a baixa automática na assinatura em até 3 segundos via Webhook.',
     platformFeePercentage: 0,
-    autoApprovePaymentsSimulated: true
+    autoApprovePaymentsSimulated: false
   }
 };
 
@@ -354,7 +355,7 @@ try {
       id: 'admin-1',
       name: 'Murilo Leonardo (Administrador)',
       email: 'murilo.leonardo57@gmail.com',
-      password: 'Murilo2@@8',
+      password: process.env.ADMIN_PASSWORD || '',
       role: 'admin',
       phone: '(11) 98350-3657',
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
@@ -429,11 +430,11 @@ app.get('/api/state', (req, res) => {
     orders: sanitizedOrders,
     tickets: db.tickets,
     transactions: db.transactions,
-    config: db.config,
+    config: { ...db.config, mercadoPagoAccessToken: '' },
     plans: [
       { id: 'monthly', title: 'Plano Mensal', price: 50.00, days: 30, description: 'Acesso completo às solicitações de clientes por 30 dias.', badge: 'Mais Flexível' },
       { id: 'semiannual', title: 'Plano Semestral', price: 200.00, days: 180, description: 'Economize R$ 100,00! 6 meses de acesso ininterrupto.', savings: 'Economize R$ 100', badge: 'Mais Popular' },
-      { id: 'annual', title: 'Plano Anual', price: 450.00, days: 365, description: 'O menor custo por mês (R$ 37,50/mês). Parcele em até 12x no cartão.', savings: 'Economize R$ 150', badge: 'Melhor Valor', installmentText: '12x de R$ 37,50' }
+      { id: 'annual', title: 'Plano Anual', price: 350.00, days: 365, description: 'Melhor valor: economize R$ 250 por ano.', savings: 'Economize R$ 250', badge: 'Melhor Valor' }
     ]
   });
 });
@@ -462,7 +463,7 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   if ((user as any).password && password && (user as any).password !== password) {
-    return res.status(401).json({ error: 'Senha incorreta! Para acessar como admin utilize a senha: Murilo2@@8' });
+    return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
   }
 
   res.json({ success: true, user });
@@ -644,69 +645,102 @@ app.post('/api/services/rate-client', (req, res) => {
 });
 
 // 4. MERCADO PAGO / SUBSCRIPTION BILLING MODULE
-app.post('/api/payment/create-checkout', (req, res) => {
+const paymentPlans: Record<string, { amount: number; months: number; title: string }> = {
+  monthly: { amount: 50, months: 1, title: 'Plano Profissional Mensal' },
+  semiannual: { amount: 200, months: 6, title: 'Plano Profissional Semestral' },
+  annual: { amount: 350, months: 12, title: 'Plano Profissional Anual' }
+};
+
+function mercadoPagoToken() {
+  return String(process.env.MERCADO_PAGO_ACCESS_TOKEN || '').trim();
+}
+
+function isValidWebhookSignature(req: express.Request, dataId: string) {
+  const secret = String(process.env.MERCADO_PAGO_WEBHOOK_SECRET || '').trim();
+  const signature = String(req.header('x-signature') || '');
+  const requestId = String(req.header('x-request-id') || '');
+  if (!secret || !signature || !requestId) return false;
+  const parts = Object.fromEntries(signature.split(',').map(part => part.trim().split('=')));
+  if (!parts.ts || !parts.v1) return false;
+  const manifest = `id:${dataId};request-id:${requestId};ts:${parts.ts};`;
+  const digest = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
+  const expected = Buffer.from(digest);
+  const received = Buffer.from(parts.v1);
+  return expected.length === received.length && crypto.timingSafeEqual(expected, received);
+}
+
+app.post('/api/payment/create-checkout', async (req, res) => {
   const { proId, planType, paymentMethod } = req.body;
   const pro = db.users.find(u => u.id === proId);
-  if (!pro) return res.status(404).json({ error: 'Profissional não encontrado' });
-
-  const plansMap: Record<string, { amount: number; days: number; title: string }> = {
-    monthly: { amount: 50.00, days: 30, title: 'Plano Mensal (30 dias)' },
-    semiannual: { amount: 200.00, days: 180, title: 'Plano Semestral (180 dias)' },
-    annual: { amount: 450.00, days: 365, title: 'Plano Anual (365 dias)' }
-  };
-
-  const selectedPlan = plansMap[planType] || plansMap.monthly;
-  const trxId = `pix-${Date.now().toString().slice(-6)}`;
-
-  // Create pending transaction
-  const newTrx = {
-    id: trxId,
-    proId: pro.id,
-    proName: pro.name,
-    planId: planType as any,
-    amount: selectedPlan.amount,
-    paymentMethod: paymentMethod || 'pix',
-    status: 'pending' as const,
-    createdAt: new Date().toISOString(),
-    qrCode: `00020126580014br.gov.bcb.pix0136${db.config.pixReceiverKey}5204000053039865405${selectedPlan.amount.toFixed(2)}5802BR5915Conecta Pro App6009Sao Paulo62240520CONECTA${trxId}6304E1F2`,
-    initPoint: `https://mercadopago.com.br/checkout/v1/redirect?pref_id=${trxId}`
-  };
-
-  db.transactions.unshift(newTrx);
-  saveDb();
-
-  res.json({
-    success: true,
-    transaction: newTrx,
-    qrCode: newTrx.qrCode,
-    initPoint: newTrx.initPoint,
-    externalRef: `${pro.id}|${selectedPlan.days}|${newTrx.id}`
-  });
+  const selectedPlan = paymentPlans[planType];
+  if (!pro || pro.role !== 'pro') return res.status(404).json({ error: 'Profissional não encontrado.' });
+  if (req.header('x-user-id') !== pro.id) return res.status(401).json({ error: 'Entre na conta profissional para pagar.' });
+  if (!selectedPlan) return res.status(400).json({ error: 'Plano inválido.' });
+  const token = mercadoPagoToken();
+  if (!token) return res.status(503).json({ error: 'Pagamento indisponível: credencial do Mercado Pago não configurada no servidor.' });
+  const appUrl = String(process.env.APP_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+  try {
+    const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: [{ id: planType, title: selectedPlan.title, quantity: 1, currency_id: 'BRL', unit_price: selectedPlan.amount }],
+        payer: { email: pro.email },
+        external_reference: `conecta-pro:${pro.id}:${planType}`,
+        metadata: { user_id: pro.id, plan_id: planType },
+        back_urls: { success: `${appUrl}/?payment=success`, pending: `${appUrl}/?payment=pending`, failure: `${appUrl}/?payment=failure` },
+        auto_return: 'approved',
+        notification_url: `${appUrl}/api/payment/webhook`,
+        payment_methods: paymentMethod === 'pix' ? { default_payment_method_id: 'pix' } : undefined
+      })
+    });
+    const preference: any = await response.json();
+    if (!response.ok || !preference.id || !preference.init_point) throw new Error(preference.message || 'Falha ao criar checkout.');
+    const transaction: any = { id: `pref-${preference.id}`, proId: pro.id, proName: pro.name, planId: planType, amount: selectedPlan.amount, paymentMethod: paymentMethod || 'pix', status: 'pending', createdAt: new Date().toISOString(), preferenceId: preference.id, initPoint: preference.init_point };
+    (db.transactions as any[]).unshift(transaction);
+    saveDb();
+    res.status(201).json({ success: true, transaction, initPoint: preference.init_point });
+  } catch (error: any) {
+    res.status(502).json({ error: error.message || 'Não foi possível iniciar o pagamento.' });
+  }
 });
 
-// Webhook simulation / Instant Approval
-app.post('/api/payment/simulate-pay', (req, res) => {
-  const { transactionId, proId, daysToAdd } = req.body;
-  const pro = db.users.find(u => u.id === proId);
-  const trx = db.transactions.find(t => t.id === transactionId);
+app.post('/api/payment/simulate-pay', (_req, res) => {
+  res.status(410).json({ error: 'Aprovação simulada desativada. Use o webhook oficial do Mercado Pago.' });
+});
 
-  if (pro) {
-    let currentDueDate = new Date();
-    if (pro.planDueDate && new Date(pro.planDueDate) > new Date()) {
-      currentDueDate = new Date(pro.planDueDate);
-    }
-    currentDueDate.setDate(currentDueDate.getDate() + (daysToAdd || 30));
-
+app.post('/api/payment/webhook', async (req, res) => {
+  const dataId = String(req.query['data.id'] || req.body?.data?.id || req.body?.id || '');
+  if (!dataId) return res.status(200).json({ received: true });
+  if (!isValidWebhookSignature(req, dataId)) return res.status(401).json({ error: 'Assinatura de webhook inválida.' });
+  const token = mercadoPagoToken();
+  if (!token) return res.status(503).json({ error: 'Mercado Pago não configurado.' });
+  try {
+    const response = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(dataId)}`, { headers: { Authorization: `Bearer ${token}` } });
+    const payment: any = await response.json();
+    if (!response.ok) throw new Error('Não foi possível consultar o pagamento.');
+    if (payment.status !== 'approved') return res.status(200).json({ received: true, status: payment.status });
+    const match = String(payment.external_reference || '').match(/^conecta-pro:([^:]+):(monthly|semiannual|annual)$/);
+    if (!match) return res.status(400).json({ error: 'Referência de pagamento inválida.' });
+    const [, proId, planId] = match;
+    const plan = paymentPlans[planId];
+    if (payment.currency_id !== 'BRL' || Number(payment.transaction_amount) !== plan.amount) return res.status(400).json({ error: 'Valor ou moeda não confere.' });
+    if ((db.transactions as any[]).some(t => t.mercadoPagoPaymentId === String(payment.id) && t.status === 'approved')) return res.status(200).json({ received: true, duplicate: true });
+    const pro = db.users.find(u => u.id === proId && u.role === 'pro');
+    if (!pro) return res.status(404).json({ error: 'Profissional não encontrado.' });
+    const start = pro.planDueDate && new Date(pro.planDueDate) > new Date() ? new Date(pro.planDueDate) : new Date();
+    const due = new Date(start);
+    due.setMonth(due.getMonth() + plan.months);
     pro.planStatus = 'active';
-    pro.planDueDate = currentDueDate.toISOString();
+    pro.planDueDate = due.toISOString();
+    const trx: any = (db.transactions as any[]).find(t => t.preferenceId === payment.preference_id && t.proId === proId);
+    if (trx) Object.assign(trx, { status: 'approved', mercadoPagoPaymentId: String(payment.id), approvedAt: new Date().toISOString(), planStartAt: start.toISOString(), planDueDate: due.toISOString() });
+    else (db.transactions as any[]).unshift({ id: `mp-${payment.id}`, proId, proName: pro.name, planId, amount: plan.amount, paymentMethod: payment.payment_type_id || 'pix', status: 'approved', createdAt: payment.date_created || new Date().toISOString(), mercadoPagoPaymentId: String(payment.id), planStartAt: start.toISOString(), planDueDate: due.toISOString() });
+    saveDb();
+    res.status(200).json({ received: true, activated: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Erro ao processar webhook.' });
   }
-
-  if (trx) {
-    trx.status = 'approved';
-  }
-
-  saveDb();
-  res.json({ success: true, pro, transaction: trx });
 });
 
 // 5. ADMIN MANAGEMENT
@@ -755,22 +789,20 @@ app.post('/api/admin/categories', (req, res) => {
 });
 
 app.post('/api/admin/config', (req, res) => {
-  const { 
-    mercadoPagoAccessToken, 
+  const {
     pixReceiverKey,
     pixReceiverName,
     pixReceiverBank,
     pixReceiverCnpjCpf,
     pixInstructions
   } = req.body;
-  if (mercadoPagoAccessToken !== undefined) db.config.mercadoPagoAccessToken = mercadoPagoAccessToken;
   if (pixReceiverKey !== undefined) db.config.pixReceiverKey = pixReceiverKey;
   if (pixReceiverName !== undefined) db.config.pixReceiverName = pixReceiverName;
   if (pixReceiverBank !== undefined) db.config.pixReceiverBank = pixReceiverBank;
   if (pixReceiverCnpjCpf !== undefined) db.config.pixReceiverCnpjCpf = pixReceiverCnpjCpf;
   if (pixInstructions !== undefined) db.config.pixInstructions = pixInstructions;
   saveDb();
-  res.json({ success: true, config: db.config });
+  res.json({ success: true, config: { ...db.config, mercadoPagoAccessToken: '' } });
 });
 
 // 6. SUPPORT TICKETS
