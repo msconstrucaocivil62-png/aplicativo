@@ -92,7 +92,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-2 sm:gap-3">
           
           {/* Exclusive Admin Portal Launch Button */}
-          {onEnterAdminApp && (
+          {onEnterAdminApp && currentUser.role === 'admin' && (
             <button
               onClick={onEnterAdminApp}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-white text-xs font-black transition-all shadow-md shadow-purple-600/30 border border-purple-400/40 cursor-pointer"
