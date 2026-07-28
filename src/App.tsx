@@ -189,30 +189,16 @@ export default function App() {
   const handleSelectPlanAndPay = async (planId: string, paymentMethod: 'pix' | 'credit_card') => {
     const res = await fetch('/api/payment/create-checkout', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-user-id': currentUser?.id || '' },
       body: JSON.stringify({
         proId: currentUser?.id,
         planType: planId,
         paymentMethod
       })
     });
-    return await res.json();
-  };
-
-  const handleSimulateWebhookApproval = async (transactionId: string, daysToAdd: number) => {
-    const res = await fetch('/api/payment/simulate-pay', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        transactionId,
-        proId: currentUser?.id,
-        daysToAdd
-      })
-    });
     const data = await res.json();
-    if (data.success) {
-      await fetchState();
-    }
+    if (!res.ok) throw new Error(data.error || 'Não foi possível iniciar o pagamento.');
+    return data;
   };
 
   const handleUpdatePlanByAdmin = async (userId: string, daysToAdd?: number, forceStatus?: any) => {
@@ -499,7 +485,7 @@ export default function App() {
                   onClick={() => setIsSubscribeModalOpen(true)}
                   className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs shadow transition-all animate-bounce cursor-pointer"
                 >
-                  Simular Pagamento Pix / Cartão
+                  Ativar ou renovar plano profissional
                 </button>
               )}
             </div>
@@ -533,9 +519,7 @@ export default function App() {
         onClose={() => setIsSubscribeModalOpen(false)}
         currentUser={currentUser}
         plans={plans}
-        config={config}
         onSelectPlanAndPay={handleSelectPlanAndPay}
-        onSimulateWebhookApproval={handleSimulateWebhookApproval}
       />
 
       <EditProfileModal
