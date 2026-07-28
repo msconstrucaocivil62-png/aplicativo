@@ -462,7 +462,7 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(404).json({ error: 'E-mail não cadastrado no sistema.' });
   }
 
-  if ((user as any).password && password && (user as any).password !== password) {
+  if (!(user as any).password || !password || (user as any).password !== password) {
     return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
   }
 
@@ -471,6 +471,10 @@ app.post('/api/auth/login', (req, res) => {
 
 app.post('/api/auth/register', (req, res) => {
   const { name, email, password, role, phone, categories, bio } = req.body;
+
+  if (role !== 'client' && role !== 'pro') {
+    return res.status(403).json({ error: 'O cadastro público permite apenas contas de cliente ou profissional.' });
+  }
   
   if (db.users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
     return res.status(400).json({ error: 'Este e-mail já está cadastrado no sistema.' });
@@ -709,7 +713,7 @@ app.post('/api/payment/simulate-pay', (_req, res) => {
   res.status(410).json({ error: 'Aprovação simulada desativada. Use o webhook oficial do Mercado Pago.' });
 });
 
-app.post('/api/payment/webhook', async (req, res) => {
+app.post(['/api/payment/webhook', '/api/mercado-pago/webhook'], async (req, res) => {
   const dataId = String(req.query['data.id'] || req.body?.data?.id || req.body?.id || '');
   if (!dataId) return res.status(200).json({ received: true });
   if (!isValidWebhookSignature(req, dataId)) return res.status(401).json({ error: 'Assinatura de webhook inválida.' });
