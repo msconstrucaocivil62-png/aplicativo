@@ -28,9 +28,7 @@ export default function App() {
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
 
   // Exclusive Admin App Mode state
-  const [isAdminAppMode, setIsAdminAppMode] = useState<boolean>(() => {
-    return window.location.pathname.startsWith('/admin') || window.location.search.includes('admin=true') || localStorage.getItem('conecta_admin_exclusive') === 'true';
-  });
+  const [isAdminAppMode, setIsAdminAppMode] = useState(false);
 
   const toggleAdminAppMode = async (enable: boolean, targetAdminId?: string) => {
     setIsAdminAppMode(enable);
@@ -362,7 +360,7 @@ export default function App() {
           onOpenSupportModal={() => setIsSupportModalOpen(true)}
           onOpenSubscribeModal={() => setIsSubscribeModalOpen(true)}
           onResetDemo={handleResetDemo}
-          onEnterAdminApp={() => toggleAdminAppMode(true)}
+          onEnterAdminApp={currentUser.role === 'admin' ? () => toggleAdminAppMode(true) : undefined}
         />
       )}
 
@@ -503,7 +501,7 @@ export default function App() {
         onSwitchUser={handleSwitchUser}
         onLoginUser={handleLoginUser}
         onRegisterUser={handleRegisterUser}
-        onEnterAdminApp={() => toggleAdminAppMode(true)}
+        onEnterAdminApp={currentUser.role === 'admin' ? () => toggleAdminAppMode(true) : undefined}
       />
 
       <SupportModal
