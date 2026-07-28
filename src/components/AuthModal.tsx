@@ -598,7 +598,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   >
                     <option value="pro">🛠️ Profissional Prestador</option>
                     <option value="client">👤 Cliente Gratuito</option>
-                    <option value="admin">👑 Administrador</option>
                   </select>
                 </div>
 
