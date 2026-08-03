@@ -81,7 +81,14 @@ export default function App() {
       return true;
     } catch (err: any) {
       console.error('Error fetching state:', err);
-      setStartupError(err?.message || 'Não foi possível carregar os dados do aplicativo.');
+      const message = err?.message || 'Não foi possível carregar os dados do aplicativo.';
+      setStartupError(message);
+      if (message.toLowerCase().includes('sessão expirou')) {
+        setAuthenticatedUser(null);
+        setCurrentUser(null);
+        setIsAdminAppMode(false);
+        setIsAuthModalOpen(true);
+      }
       return false;
     } finally {
       setLoading(false);
