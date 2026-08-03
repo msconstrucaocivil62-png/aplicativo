@@ -97,7 +97,12 @@ export default function App() {
 
   const loadSupabaseUser = async () => {
     if (!supabase || !isSupabaseConfigured) {
-      await fetchState();
+      if (demoMode) {
+        await fetchState();
+      } else {
+        setStartupError('A conexão segura do aplicativo ainda não foi configurada.');
+        setLoading(false);
+      }
       return;
     }
 
