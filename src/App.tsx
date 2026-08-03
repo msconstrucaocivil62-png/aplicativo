@@ -416,6 +416,8 @@ export default function App() {
     }
   };
 
+  const hasExpiredSession = startupError.toLowerCase().includes('sessão expirou');
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 text-white space-y-4">
@@ -428,7 +430,7 @@ export default function App() {
     );
   }
 
-  if (isSupabaseConfigured && !authenticatedUser) {
+  if (isSupabaseConfigured && (!authenticatedUser || hasExpiredSession)) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
         <div className="text-center text-white space-y-5">
