@@ -18,6 +18,9 @@ export interface User {
   clientRating?: number;
   clientRatingsCount?: number;
   completedJobs?: number;
+  latitude?: number;
+  longitude?: number;
+  accountStatus?: 'active' | 'pending_review' | 'blocked';
 }
 
 export interface ServiceCategory {
@@ -45,6 +48,10 @@ export interface ServiceOrder {
   clientRating?: number; // Avaliação de 1 a 5 estrelas do cliente dada pelo pro
   clientRatingComment?: string; // Feedback ou comentário
   clientRatedAt?: string;
+  latitude?: number;
+  longitude?: number;
+  scheduledAt?: string;
+  attachments?: Array<{ id: string; name: string; type: string; dataUrl: string }>;
 }
 
 export interface SupportTicket {
