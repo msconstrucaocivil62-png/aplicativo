@@ -251,7 +251,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             <button
               type="submit"
               disabled={loading || success}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-sm shadow-lg shadow-blue-500/25 hover:brightness-110 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-amber-600 text-white font-black text-sm shadow-lg shadow-blue-500/25 hover:brightness-110 flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

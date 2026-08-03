@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User, ServiceCategory, ServiceOrder } from '../types';
 import { DynamicIcon } from './IconHelper';
 import { PlusCircle, Search, MapPin, Phone, Clock, CheckCircle2, AlertCircle, HelpCircle, ArrowRight, ShieldCheck, Sparkles, Send, Star, Award, MessageSquare } from 'lucide-react';
+import { Phase2Tools } from './Phase2Tools';
 
 interface ClientPortalProps {
   currentUser: User;
@@ -27,12 +28,16 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
   const [location, setLocation] = useState<string>(currentUser.location || 'São Paulo, SP');
   const [phone, setPhone] = useState<string>(currentUser.phone || '(11) 99888-7766');
   const [urgency, setUrgency] = useState<'baixa' | 'media' | 'alta' | 'imediato'>('media');
+  const [latitude, setLatitude] = useState<number | undefined>(currentUser.latitude);
+  const [longitude, setLongitude] = useState<number | undefined>(currentUser.longitude);
+  const [scheduledAt, setScheduledAt] = useState<string>('');
+  const [attachments, setAttachments] = useState<any[]>([]);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'request' | 'my_orders'>('request');
 
-  const myOrders = orders.filter(o => o.clientId === currentUser.id || true); // Show all in demo for rich preview
+  const myOrders = orders.filter(o => o.clientId === currentUser.id); // Show all in demo for rich preview
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,11 +54,17 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
         description,
         location,
         urgency,
-        phone
+        phone,
+        latitude,
+        longitude,
+        scheduledAt: scheduledAt || undefined,
+        attachments
       });
       setSuccessMsg(`🚀 Pedido enviado com sucesso! Notificamos os profissionais da categoria "${selectedCategory}" na sua região.`);
       setTitle('');
       setDescription('');
+      setScheduledAt('');
+      setAttachments([]);
       setTimeout(() => {
         setSuccessMsg(null);
         setActiveTab('my_orders');
@@ -90,7 +101,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 text-white p-8 sm:p-12 shadow-2xl border border-slate-800">
         <div className="absolute top-0 right-0 -mt-12 -mr-12 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10 max-w-3xl space-y-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-xs sm:text-sm font-semibold tracking-wide">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 text-amber-300 border border-blue-400/30 text-xs sm:text-sm font-semibold tracking-wide">
             <Sparkles className="w-4 h-4 text-blue-400" />
             <span>100% Gratuito para Clientes • Zero Taxas de Intermediação</span>
           </div>
@@ -130,7 +141,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
-                ⭐ Reputação de Cliente Conecta Pro
+                ⭐ Reputação de Cliente O Profissional Certo
               </span>
               {(currentUser.clientRatingsCount || currentUser.ratingsCount || 0) > 0 && (
                 <span className="text-xs font-bold text-slate-500">
@@ -360,15 +371,28 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                 </div>
               </div>
 
+              <Phase2Tools
+                currentUser={currentUser}
+                users={users}
+                category={selectedCategory}
+                latitude={latitude}
+                longitude={longitude}
+                scheduledAt={scheduledAt}
+                attachments={attachments}
+                onCoords={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+                onSchedule={setScheduledAt}
+                onAttachments={setAttachments}
+              />
+
               <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>Seus dados são protegidos pelo sistema Conecta Pro.</span>
+                  <span>Seus dados são protegidos pelo sistema O Profissional Certo.</span>
                 </div>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-base shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-amber-600 hover:from-blue-500 hover:to-amber-600 text-white font-extrabold text-base shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <>
@@ -451,7 +475,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                         </p>
                       )}
                       <div className="flex items-center justify-between text-[11px] text-amber-800 font-semibold pt-1">
-                        <span>🛠️ Avaliado por: <strong>{order.assignedProName || 'Profissional Conecta Pro'}</strong></span>
+                        <span>🛠️ Avaliado por: <strong>{order.assignedProName || 'Profissional O Profissional Certo'}</strong></span>
                         {order.clientRatedAt && <span>📅 {new Date(order.clientRatedAt).toLocaleDateString('pt-BR')}</span>}
                       </div>
                     </div>
@@ -496,7 +520,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
       {/* Support Box */}
       <div className="bg-gradient-to-r from-slate-900 to-blue-950 rounded-3xl p-8 text-white flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl border border-slate-800">
         <div className="space-y-2 text-center sm:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-amber-300 text-xs font-bold">
             <HelpCircle className="w-4 h-4" />
             Central de Ajuda Direta
           </div>

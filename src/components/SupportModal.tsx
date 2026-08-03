@@ -60,7 +60,7 @@ export const SupportModal: React.FC<SupportModalProps> = ({
             <HelpCircle className="w-4 h-4" />
             <span>Central de Atendimento Direto</span>
           </div>
-          <h2 className="text-2xl font-black tracking-tight">Suporte Conecta Pro</h2>
+          <h2 className="text-2xl font-black tracking-tight">Suporte O Profissional Certo</h2>
           <p className="text-slate-300 text-sm mt-1">
             Abra um chamado caso tenha dúvidas sobre pagamentos Pix/Cartão, ativação de planos ou problemas técnicos no app.
           </p>
@@ -106,7 +106,7 @@ export const SupportModal: React.FC<SupportModalProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-extrabold text-sm shadow-md transition-all flex items-center justify-center gap-2"
+              className="w-full py-3.5 rounded-xl bg-slate-900 hover:bg-amber-500 text-white font-extrabold text-sm shadow-md transition-all flex items-center justify-center gap-2"
             >
               {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : (
                 <>
@@ -140,8 +140,8 @@ export const SupportModal: React.FC<SupportModalProps> = ({
                     <p className="text-xs text-slate-600">"{t.message}"</p>
 
                     {t.reply && (
-                      <div className="p-3 rounded-xl bg-white border border-purple-200 text-purple-900 text-xs space-y-1 mt-2">
-                        <span className="font-extrabold block text-purple-700">💬 Resposta do Administrador:</span>
+                      <div className="p-3 rounded-xl bg-white border border-amber-200 text-slate-900 text-xs space-y-1 mt-2">
+                        <span className="font-extrabold block text-amber-700">💬 Resposta do Administrador:</span>
                         <p className="font-medium">{t.reply}</p>
                       </div>
                     )}

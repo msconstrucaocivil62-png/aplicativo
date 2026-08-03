@@ -108,7 +108,7 @@ export const ProPortal: React.FC<ProPortalProps> = ({
       return;
     }
     const cleanPhone = order.clientPhone.replace(/\D/g, '');
-    const msg = encodeURIComponent(`Olá ${order.clientName}! Vi sua solicitação no aplicativo Conecta Pro sobre "${order.title}". Sou profissional especialista em ${order.category}, podemos falar sobre o orçamento?`);
+    const msg = encodeURIComponent(`Olá ${order.clientName}! Vi sua solicitação no aplicativo O Profissional Certo sobre "${order.title}". Sou profissional especialista em ${order.category}, podemos falar sobre o orçamento?`);
     window.open(`https://api.whatsapp.com/send?phone=55${cleanPhone}&text=${msg}`, '_blank');
   };
 
@@ -217,7 +217,7 @@ export const ProPortal: React.FC<ProPortalProps> = ({
           </div>
           <button
             onClick={onOpenSupportModal}
-            className="p-3 rounded-xl bg-slate-900 hover:bg-blue-600 text-white transition-all shadow-md"
+            className="p-3 rounded-xl bg-slate-900 hover:bg-amber-500 text-white transition-all shadow-md"
             title="Acionar Suporte"
           >
             <HelpCircle className="w-5 h-5" />
@@ -648,7 +648,7 @@ export const ProPortal: React.FC<ProPortalProps> = ({
           </div>
 
           {/* SAFETY & ETHICS COMPLIANCE BANNER */}
-          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 rounded-3xl border border-indigo-500/30 shadow-xl relative overflow-hidden">
+          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 rounded-3xl border border-amber-500/30 shadow-xl relative overflow-hidden">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-5 relative z-10">
               <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-950/50">
                 <ShieldCheck className="w-8 h-8" />
@@ -656,14 +656,14 @@ export const ProPortal: React.FC<ProPortalProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-500/30 text-emerald-300 border border-emerald-400/30">
-                    🛡️ Conformidade & Ética Conecta Pro • 100% Legalizado
+                    🛡️ Conformidade & Ética O Profissional Certo • 100% Legalizado
                   </span>
                 </div>
                 <h4 className="text-xl sm:text-2xl font-black tracking-tight text-white">
                   Todas as Categorias Existentes Permitidas – Sem Profissões Proibidas
                 </h4>
                 <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-4xl">
-                  O nosso ecossistema abrange todas as atividades profissionais técnicas, domésticas, de reforma, eventos, saúde e tecnologia regulamentadas pelo mercado civil. Em rigoroso respeito à legislação brasileira e às Diretrizes de Segurança Conecta Pro, <strong>são terminantemente excluídas e vetadas quaisquer profissões ou serviços proibidos</strong> — tais como jogos de azar e apostas online (bets), agiotagem ou empréstimos ilegais, serviços de cunho adulto ou acompanhantes, invasão cibernética/hacking ou comercialização de substâncias restritas. Trabalhamos apenas com profissionais dignos, honestos e qualificados!
+                  O nosso ecossistema abrange todas as atividades profissionais técnicas, domésticas, de reforma, eventos, saúde e tecnologia regulamentadas pelo mercado civil. Em rigoroso respeito à legislação brasileira e às Diretrizes de Segurança O Profissional Certo, <strong>são terminantemente excluídas e vetadas quaisquer profissões ou serviços proibidos</strong> — tais como jogos de azar e apostas online (bets), agiotagem ou empréstimos ilegais, serviços de cunho adulto ou acompanhantes, invasão cibernética/hacking ou comercialização de substâncias restritas. Trabalhamos apenas com profissionais dignos, honestos e qualificados!
                 </p>
               </div>
             </div>
