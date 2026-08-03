@@ -212,10 +212,10 @@ export const supabase = isSupabaseConfigured ? {
     },
     async signOut() {
       const session = readSession();
-      if (session?.access_token) {
-        await authRequest('/logout', { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}` } });
-      }
       writeSession(null, 'SIGNED_OUT');
+      if (session?.access_token) {
+        void authRequest('/logout', { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}` } });
+      }
       return { error: null };
     },
     getUser,
