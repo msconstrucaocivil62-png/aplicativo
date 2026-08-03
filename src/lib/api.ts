@@ -16,7 +16,9 @@ export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {})
   const target = apiBaseUrl && raw.startsWith('/') ? `${apiBaseUrl}${raw}` : input;
   const response = await fetch(target, { ...init, headers });
   if (response.status === 401) {
-    await supabase?.auth.signOut();
+    try { localStorage.removeItem('opc_supabase_session'); } catch { /* armazenamento indisponível */ }
+    void supabase?.auth.signOut();
+    window.location.replace('/');
     throw new Error('Sua sessão expirou. Entre novamente.');
   }
   if (response.status === 403) throw new Error('Você não tem permissão para realizar esta ação.');
