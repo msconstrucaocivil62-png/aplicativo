@@ -90,6 +90,18 @@ async function getUser(accessToken?: string) {
   return { data: { user: result.data }, error: null };
 }
 
+async function refreshSession(session: Session): Promise<Session | null> {
+  if (!session.refresh_token) return null;
+  const result = await authRequest('/token?grant_type=refresh_token', {
+    method: 'POST',
+    body: JSON.stringify({ refresh_token: session.refresh_token }),
+  });
+  if (result.error || !result.data?.access_token) return null;
+  const refreshed = result.data as Session;
+  writeSession(refreshed, 'TOKEN_REFRESHED');
+  return refreshed;
+}
+
 async function hydrateUrlSession() {
   const parsed = parseSessionFromUrl();
   if (!parsed) return;
@@ -137,8 +149,16 @@ export const supabase = isSupabaseConfigured ? {
   auth: {
     async getSession() {
       await hydrateUrlSession();
-      const session = readSession();
+      let session = readSession();
       if (!session) return { data: { session: null }, error: null };
+      const expiresAt = Number(session.expires_at || 0);
+      if (expiresAt && expiresAt <= Math.floor(Date.now() / 1000) + 60) {
+        session = await refreshSession(session);
+        if (!session) {
+          writeSession(null, 'SIGNED_OUT');
+          return { data: { session: null }, error: { message: 'Sessão expirada.' } };
+        }
+      }
       if (!session.user?.id) {
         const result = await getUser(session.access_token);
         if (result.error || !result.data.user) {
