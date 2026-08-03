@@ -1,0 +1,26 @@
+CONECTA PRO V2.2
+
+1. Clique com o botao direito no ZIP.
+2. Escolha EXTRAIR TUDO.
+3. Abra a pasta conecta_pro_v2_2.
+4. Execute INICIAR_CONECTA_PRO.cmd.
+5. Nao feche a janela Conecta Pro - Servidor durante o teste.
+
+Para encerrar, execute PARAR_CONECTA_PRO.cmd.
+
+IMPORTANTE:
+Nao execute os arquivos diretamente dentro do ZIP.
+
+RECURSOS DESTA VERSAO:
+- Perfis de cliente, profissional e administrador.
+- Pedidos de servico.
+- Propostas com valor e prazo.
+- Contratacao de profissional.
+- Chat associado ao pedido.
+- Avaliacoes e reputacao.
+- Categorias de servicos.
+- Suporte e assinaturas demonstrativas.
+- Aplicativo instalavel como PWA.
+
+Esta e uma versao local de homologacao. Pagamentos e dados reais ainda exigem
+servidor HTTPS, banco de producao e configuracao segura de autenticacao.

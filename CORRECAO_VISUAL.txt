@@ -1,0 +1,9 @@
+CONECTA PRO - CORRECAO VISUAL
+
+Esta versão inclui um carregador visual de segurança para garantir que as classes do Tailwind sejam aplicadas durante o teste local.
+
+Para testar:
+1. Execute INSTALAR_E_ABRIR_CONECTA_PRO_VISUAL.cmd.
+2. Aguarde o navegador abrir em http://localhost:3000.
+3. Mantenha a janela do servidor aberta.
+4. Caso veja a versão antiga, pressione Ctrl+F5 no navegador.
